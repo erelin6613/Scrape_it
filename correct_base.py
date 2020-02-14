@@ -124,18 +124,24 @@ def process_phones(phone, country=None):
 		return phone
 	if country.lower() == 'uk' or country.lower() == 'gb':
 		if phone.startswith('0'):
-			return '+44 '+phone[1:]
-		return '+44 '+phone
+			phone = '+44 '+phone[1:]
+		else:
+			phone = '+44 '+phone
 	if country.lower() == 'us' or country.lower() == 'ca' or country.lower() == 'usa':
 		if phone.startswith('0') or phone.startswith('1'):
-			return '+1 '+phone[1:]
-		return '+1 '+phone
+			phone = '+1 '+phone[1:]
+		else:
+			phone = '+1 '+phone
 	if country.lower() == 'au':
 		if phone.startswith('0'):
-			return '+61 '+phone[1:]
-		return '+61 '+phone
-	print(country)
-	return None
+			phone = '+61 '+phone[1:]
+		else:
+			phone = '+61 '+phone
+
+	if len(phone.strip(' ')) > 14 and len(phone.strip(' ')) < 11:
+		return None
+
+	return phone
 
 def count_digits(string):
 
@@ -178,6 +184,43 @@ def main():
 		frame = frame.drop(phone_cols, axis=1)
 		frame.to_csv(f'frame_{i}.csv')
 		i += 1
+
+
+def check_address(adr, geo_key=None):
+
+	if geo_key:
+
+		r = requests.get(f'https://geocoder.ls.hereapi.com/6.2/geocode.json?apiKey={geo_key}&searchtext={adr}')
+		print(r.url)
+		address = {}
+
+		try:
+			return json.loads(r.text)['Response']['View'][0]['Result'][0]['Location']['Address']
+		except Exception:
+			return adr
+	else:
+		return adr
+
+
+def extend_addresses(address, geo_key=None):
+
+	adr_dict = {}
+
+	address = check_address(address, geo_key=geo_key)
+	try:
+		if len(address.keys()) > 0:
+			for key in address.keys():
+				if key == 'Label':
+					adr_dict['address'] = address[key].split(',')[0]
+					continue
+				if key == 'AdditionalData':
+					continue
+
+				adr_dict[key.lower()] = address[key]
+	except Exception:
+		adr_dict['address'] = adr_dict['address'].split(',')[0]
+
+	return adr_dict
 
 
 
