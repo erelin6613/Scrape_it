@@ -4,11 +4,12 @@ from bs4 import BeautifulSoup
 import re
 import phonenumbers
 import pyap
+from address_parser import Parser
+import requests
+import json
 
+parser = Parser()
 
-usa_aliases = ['United States of America', 'United States', 'USA', 'US']
-uk_aliases = ['United Kingdom', 'Great Britain', 'UK', 'GB']
-au_aliases = ['Australia', 'Commonwealth of Australia', 'AU']
 
 with open('name_stop_words.txt', 'r') as file:
 	name_stop_words = [r.strip() for r in file.readlines()]
@@ -22,7 +23,20 @@ with open('regex.txt', 'r') as file:
 with open('email_keywords.txt', 'r') as file:
 	email_keywords = [w.strip() for w in file.readlines()]
 
-#print(regex)
+internal_links = {'contact_link': r'contact.*', 
+					'privacy_link': r'privacy.*policy', 
+					'delivery_link': r'(deliver|shiping).*(policy)*', 
+					'terms_link': r'term.*(condition|use|service)', 
+					'faq_link': r'(faq)|(frequently.*asked.*question)', 
+					'return_link': r'return.*', 
+					'warranty_link': r'(warrant)|(guarant)'}
+
+external_links = {'twitter': 'twitter.com', 
+					'facebook': 'facebook.com',
+					'instagram': 'instagram.com',
+					'pinterest':'pinterest.com', 
+					'youtube': 'youtube.com',
+					'linkedin': 'linkedin.com'}
 
 class Scrape_it:
 
@@ -79,18 +93,18 @@ class Scrape_it:
 		#print(self.get_soup())
 
 
-	def get_soup(self):
+	def get_soup(self, url):
 
 		if self.method == 'requests':
 			import requests
-			r = requests.get(self.url)
+			r = requests.get(url)
 			soup = BeautifulSoup(r.text, 'lxml')
 		if self.method == 'webdriver':
 			from selenium import webdriver
 			options = webdriver.ChromeOptions()	
 			options.add_argument('headless')
 			driver = webdriver.Chrome(executable_path='./chromedriver',options=options)
-			driver.get(self.url)
+			driver.get(url)
 			soup = BeautifulSoup(driver.page_source, 'lxml')
 		
 		return soup
@@ -109,7 +123,7 @@ class Scrape_it:
 					break
 
 
-		return self.model.company_name
+		return self.model['company_name']
 
 
 
@@ -128,6 +142,7 @@ class Scrape_it:
 
 		self.model['company_name'] = self.clean_name()
 		self.model['company_name'] = self.model['company_name']
+
 
 	def find_phones(self):
 
@@ -168,7 +183,7 @@ class Scrape_it:
 		if len(self.model['phones']) == 0:
 			self.model['phones'] = get_from_href(self.soup)
 
-	
+
 	def find_address(self):
 
 		def find_base(soup, country='us'):
@@ -179,36 +194,24 @@ class Scrape_it:
 			text = soup.get_text()
 			address = ''
 
-			#for line in text:
 			adr = pyap.parse(text, country='us')
 			if len(adr) > 0:
 				for item in adr:
 					address = address+' '+str(item)
 
+			print(address)
+
+			print(type(parser.parse(addrstr=address)))
+
 			return address
 
-		def define_country(address):
 
-			for alias in usa_aliases:
-				if alias in self.model['address']:
-					return 'us'
-
-			for alias in uk_aliases:
-				if alias in self.model['address']:
-					return 'gb'
-
-			for alias in au_aliases:
-				if alias in self.model['address']:
-					return'au'
-
-			return None
 
 		self.model['address'] = find_base(self.soup, self.model['country'])
 
-		if self.model['country'] == None:
-			self.country = define_country(self.model['address'])
-
-
+		if len(self.model['address']) > 0:
+			if define_country(self.model['country']) != None:
+				self.model['country'] = define_country(self.model['country'])
 
 
 	def find_email(self):
@@ -217,9 +220,7 @@ class Scrape_it:
 
 			emails = set()
 
-			email_pattern = '[A-Za-z0-9]*@{1}[A-Za-z0-9]*\.(com|org|de|edu|gov|uk|au){1}'
-			#email_pattern = re.compile(email_pattern)
-			#email_pattern = r'[A-Za-z0-9]*@{1}[A-Za-z0-9]*\.(com|org|de|edu|gov|uk|au|){1}\.?(uk|au)?'
+			email_pattern = r'[A-Za-z0-9]*@{1}[A-Za-z0-9]*\.(com|org|de|edu|gov|uk|au){1}'
 			for script in soup(["script", "style"]):
 				script.extract()
 
@@ -239,21 +240,142 @@ class Scrape_it:
 						if word in email:
 							return email
 
-			return list(emails)[0]
+			if len(list(emails)) > 0:
+				return list(emails)[0]
+			return None
 
 		self.model['email'] = keep_with_keywords(get_all_emails(self.soup), keywords=email_keywords)
+
+	
+	def find_links(self):
+
+		def find_raw_links(soup):
+
+			links = {}
+			for each in soup.find_all('a'):
+				for ext_key, ext_val in external_links.items():
+					if ext_val in str(each.get('href')):
+						links[ext_key] = str(each.get('href'))
+
+				for int_key, int_val in internal_links.items():
+					try:
+						url = re.findall(int_val, each.get('href'))
+						if len(url) > 0:
+							links[int_key] = str(each.get('href'))
+					except Exception:
+						pass
+
+			return links
+
+
+		def build_links(links):
+
+			for key, link in links.items():
+				if key in external_links.keys():
+					continue
+				if link.startswith('/'):
+					if self.url.endswith('/'):
+						links[key] = self.url+link[1:]
+					else:
+						links[key] = self.url+link
+
+			return links
+
+
+
+		links = build_links(find_raw_links(self.soup))
+		
+		for key, link in links.items():
+			self.model[key] = link
+
+
+
+	def validate_address(self):
+
+		def check_address(adr, geo_key=None):
+
+			if geo_key:
+
+				r = requests.get(f'https://geocoder.ls.hereapi.com/6.2/geocode.json?apiKey={geo_key}&searchtext={adr}')
+				#address = {}
+				try:
+					return json.loads(r.text)['Response']['View'][0]['Result'][0]['Location']['Address']
+
+				except Exception:
+					return adr
+			else:
+				return adr
+
+		def extend_addresses(address, geo_key=None):
+
+			adr_dict = {}
+
+			address = check_address(address, geo_key)
+			try:
+				if len(address.keys()) > 0:
+					for key in address.keys():
+						if key == 'Label':
+							adr_dict['address'] = address[key].split(',')[0]
+							#print(adr_dict['address'])
+							continue
+						if key == 'AdditionalData':
+							continue
+						if key == 'Country' and address[key] != None:
+							adr_dict['country'] = define_country(address['Country'])
+							continue
+
+
+						adr_dict[key] = address[key]
+			except Exception:
+				pass
+
+
+			return adr_dict
+
+
+
+		if self.model['address'] != None and len(self.model['address']) > 0:
+			for key, val in extend_addresses(self.model['address'], self.geo_key).items():
+				if key.lower() == 'country' and self.model['country']:
+					#self.model['country'] = define_country(define_country(val))
+					continue
+				self.model[key.lower()] = val
+
+		#self.model['country'] = self.define_country()
+
 
 
 
 
 	def scrape(self):
 
-		self.soup = self.get_soup()
+		self.soup = self.get_soup(self.url)
 		self.init_model()
 		self.logging()
 		self.find_address()
 		self.find_phones()
 		self.find_email()
+		self.find_links()
+
+		if self.model['address'] != None or len(self.model['address']) != 0:
+			self.validate_address()
+
+		if self.model['contact_link']:
+			self.soup = self.get_soup(self.model['contact_link'])
+			if self.model['address'] == None or len(self.model['address']) == 0:
+				print(self.model['country'])
+				self.find_address()
+				print(self.model['country'])
+				#print(self.model['address'])
+				#print(self.model['country'])
+				self.validate_address()
+				print(self.model['country'])
+			self.find_phones()
+			if self.model['email'] == None or len(self.model['email']) == 0:
+				self.find_email()
+
+		
+
 		for key, val in self.model.items():
 			print(key, ':', val)
 
