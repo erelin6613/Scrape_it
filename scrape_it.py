@@ -6,7 +6,9 @@ import phonenumbers
 import pyap
 from address_parser import Parser
 import requests
+from selenium import webdriver
 import json
+from scrape_policy_text import _get_text_list, text_generator
 
 parser = Parser()
 
@@ -25,7 +27,7 @@ with open('email_keywords.txt', 'r') as file:
 
 internal_links = {'contact_link': r'contact.*', 
 					'privacy_link': r'privacy.*policy', 
-					'delivery_link': r'(deliver|shiping).*(policy)*', 
+					'shipping_link': r'(deliver|shiping).*(policy)*', 
 					'terms_link': r'term.*(condition|use|service)', 
 					'faq_link': r'(faq)|(frequently.*asked.*question)', 
 					'return_link': r'return.*', 
@@ -90,7 +92,6 @@ class Scrape_it:
 	def logging(self):
 
 		print('Scraping', self.url, '...')
-		#print(self.get_soup())
 
 
 	def get_soup(self, url):
@@ -126,22 +127,28 @@ class Scrape_it:
 		return self.model['company_name']
 
 
-
 	def get_name(self):
 
 		metas_og = ['og:site_name', 'og:title']
 		metas = ['title', 'name']
 		for meta in metas_og:
 			if self.model['company_name'] == None or self.model['company_name'] == '':
-				self.model['company_name'] = self.soup.find('meta').get('content')
-				#self.company_name = self.soup.find('meta', attrs={'property': meta}).get('content')
+				try:
+					self.model['company_name'] = self.soup.find('meta', attrs={'property': meta}).get('content')
+				except AttributeError:
+					pass
 
 		for meta in metas:
 			if self.model['company_name'] == None or self.model['company_name'] == '':
-				self.model['company_name'] = self.soup.find('meta', attrs={'name': meta}).get('content')
+				try:
+					self.model['company_name'] = self.soup.find('meta', attrs={'name': meta}).get('content')
+				except AttributeError:
+					if self.soup.find('title'):
+						if len(self.soup.find('title')) > 0:
+							self.model['company_name'] = self.soup.find('title').text
+		if self.model['company_name'] != None:
+			self.model['company_name'] = self.clean_name()
 
-		self.model['company_name'] = self.clean_name()
-		self.model['company_name'] = self.model['company_name']
 
 
 	def find_phones(self):
@@ -178,8 +185,11 @@ class Scrape_it:
 			return phones
 
 
-		self.model['phones'] = match_phones(self.soup)
-		#print(self.model['phones'])
+		if self.model['phones']:
+			self.model['phones'] = self.model['phones'].union(match_phones(self.soup))
+		else:
+			self.model['phones'] = match_phones(self.soup)
+
 		if len(self.model['phones']) == 0:
 			self.model['phones'] = get_from_href(self.soup)
 
@@ -190,7 +200,6 @@ class Scrape_it:
 
 			for script in soup(["script", "style"]):
 				script.extract()
-			#print(soup)
 			text = soup.get_text()
 			address = ''
 
@@ -198,10 +207,6 @@ class Scrape_it:
 			if len(adr) > 0:
 				for item in adr:
 					address = address+' '+str(item)
-
-			print(address)
-
-			print(type(parser.parse(addrstr=address)))
 
 			return address
 
@@ -268,6 +273,7 @@ class Scrape_it:
 			return links
 
 
+
 		def build_links(links):
 
 			for key, link in links.items():
@@ -279,7 +285,29 @@ class Scrape_it:
 					else:
 						links[key] = self.url+link
 
+
+				else:
+					if link.startswith('http') == False and link.startswith('www') == False:
+						if self.url.endswith('/'):
+							links[key] = self.url+link
+						else:
+							links[key] = self.url+'/'+link
+
+				links = clean_links(links)
+
 			return links
+
+		def clean_links(links):
+
+			stop_attrs = ['#', '?', 'login', 'signup', 'sign-up', 'sign_up']
+
+			for key, link in links.items():
+				for attr in stop_attrs:
+					if attr in link:
+						links[key] = link.split(attr)[0]
+
+			return links
+
 
 
 
@@ -289,7 +317,6 @@ class Scrape_it:
 			self.model[key] = link
 
 
-
 	def validate_address(self):
 
 		def check_address(adr, geo_key=None):
@@ -297,7 +324,7 @@ class Scrape_it:
 			if geo_key:
 
 				r = requests.get(f'https://geocoder.ls.hereapi.com/6.2/geocode.json?apiKey={geo_key}&searchtext={adr}')
-				#address = {}
+
 				try:
 					return json.loads(r.text)['Response']['View'][0]['Result'][0]['Location']['Address']
 
@@ -316,7 +343,6 @@ class Scrape_it:
 					for key in address.keys():
 						if key == 'Label':
 							adr_dict['address'] = address[key].split(',')[0]
-							#print(adr_dict['address'])
 							continue
 						if key == 'AdditionalData':
 							continue
@@ -337,13 +363,8 @@ class Scrape_it:
 		if self.model['address'] != None and len(self.model['address']) > 0:
 			for key, val in extend_addresses(self.model['address'], self.geo_key).items():
 				if key.lower() == 'country' and self.model['country']:
-					#self.model['country'] = define_country(define_country(val))
 					continue
 				self.model[key.lower()] = val
-
-		#self.model['country'] = self.define_country()
-
-
 
 
 
@@ -352,6 +373,8 @@ class Scrape_it:
 		self.soup = self.get_soup(self.url)
 		self.init_model()
 		self.logging()
+		if self.model['company_name'] == None:
+			self.get_name()
 		self.find_address()
 		self.find_phones()
 		self.find_email()
@@ -363,16 +386,23 @@ class Scrape_it:
 		if self.model['contact_link']:
 			self.soup = self.get_soup(self.model['contact_link'])
 			if self.model['address'] == None or len(self.model['address']) == 0:
-				print(self.model['country'])
 				self.find_address()
-				print(self.model['country'])
-				#print(self.model['address'])
-				#print(self.model['country'])
 				self.validate_address()
-				print(self.model['country'])
 			self.find_phones()
 			if self.model['email'] == None or len(self.model['email']) == 0:
 				self.find_email()
+		if self.method == 'requests':
+			for key, val in internal_links.items():
+				if self.model[key] != None:
+					if 'contact' in key:
+						continue
+					text_key = key.split('_')[0]+'_text'
+					self.model[text_key] = _get_text_list(self.model[key], method='requests')
+					if self.model[text_key] != None:
+						self.model[text_key] = '; '.join(text_generator(text_mas=self.model[text_key][0], 
+														company_name=self.model['company_name'],
+														company_website=self.model['url']))
+
 
 		
 
