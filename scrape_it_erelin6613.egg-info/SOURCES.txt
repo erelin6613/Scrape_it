@@ -1,0 +1,6 @@
+README.md
+setup.py
+scrape_it_erelin6613.egg-info/PKG-INFO
+scrape_it_erelin6613.egg-info/SOURCES.txt
+scrape_it_erelin6613.egg-info/dependency_links.txt
+scrape_it_erelin6613.egg-info/top_level.txt
