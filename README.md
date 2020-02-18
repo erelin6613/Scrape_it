@@ -76,3 +76,4 @@ The Scrape_it is by no means a perfect package and can be improved for sure. If 
 
 #### Q: The object returns the emplty dictionary. What do I do?
 ###### A: It could be the case the tools used did not find anything though it is certainly an exception rather than a rule. What you can try though: use 'webdriver' method to ensure JavaScript is rendered too, try specify the country, use proxy/VPN in case the website might block requests from your location
+# Scrape_it
