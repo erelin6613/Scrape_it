@@ -60,9 +60,6 @@ parser = Parser()
 with open('name_stop_words.txt', 'r') as file:
 	name_stop_words = [r.strip() for r in file.readlines()]
 
-with open('/home/val/Downloads/geo-key.txt', 'r') as key:
-    geo_key = key.read()
-
 with open('regex.txt', 'r') as file:
 	phone_regex = [r.strip() for r in file.readlines()]
 
