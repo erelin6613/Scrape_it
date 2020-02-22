@@ -1,0 +1,7 @@
+README.md
+setup.cfg
+setup.py
+scrape_it.egg-info/PKG-INFO
+scrape_it.egg-info/SOURCES.txt
+scrape_it.egg-info/dependency_links.txt
+scrape_it.egg-info/top_level.txt
