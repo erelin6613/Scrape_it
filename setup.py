@@ -4,7 +4,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="scrape_it",
+    name="scrape_it-erelin6613",
     version="0.1.7",
     author="Valentyna Fihurska",
     author_email="valentineburn@gmail.com",
