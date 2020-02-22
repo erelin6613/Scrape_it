@@ -5,7 +5,7 @@ Scrape_it is a tool for extracting valueble information from the website of inte
 # Installation
 Scrape_it is avalable on Pypi, you can install it using pip:
 ```sh
-pip install install scrape-it
+pip install scrape-it
 ```
 Install the lastest version:
 ```sh
