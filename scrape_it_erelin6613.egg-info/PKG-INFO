@@ -1,14 +1,25 @@
 Metadata-Version: 2.1
 Name: scrape-it-erelin6613
-Version: 0.1.6
+Version: 0.1.7
 Summary: Systemitized tool for scraping
-Home-page: https://github.com/erelin6613/Scrape_it/releases/tag/v1.6
+Home-page: https://github.com/erelin6613/Scrape_it/releases/tag/v0.1.7
 Author: Valentyna Fihurska
 Author-email: valentineburn@gmail.com
-License: UNKNOWN
+License: Apache License 2.0
 Description: # Scrape_it
         
         Scrape_it is a tool for extracting valueble information from the website of interest. Save your time on reading and crawling through the website and leave it for Scrape_it!
+        
+        # Installation
+        Scrape_it is avalable on Pypi, you can install it using pip:
+        ```sh
+        pip install install scrape-it
+        ```
+        Install the lastest version:
+        ```sh
+        pip install git+https://github.com/erelin6613/Scrape_it
+        ```
+        
         
         # Scrape_it object
         
@@ -84,10 +95,13 @@ Description: # Scrape_it
         
         #### Q: The object returns the emplty dictionary. What do I do?
         ###### A: It could be the case the tools used did not find anything though it is certainly an exception rather than a rule. What you can try though: use 'webdriver' method to ensure JavaScript is rendered too, try specify the country, use proxy/VPN in case the website might block requests from your location
-        # Scrape_it
+        
+        #### Q: Should I pass a root link or any would work?
+        ###### A: Yes, for now at least. Scrape_it will scrape some information still but it relies on finding additional links to scrape the most information possible and I did not set the pipeline to process non-root links yet (I am working on it)
         
 Platform: UNKNOWN
 Classifier: Programming Language :: Python :: 3
 Classifier: Operating System :: OS Independent
+Classifier: License :: OSI Approved :: Apache Software License
 Requires-Python: >=3.5
 Description-Content-Type: text/markdown
