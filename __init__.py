@@ -13,7 +13,7 @@ Find an example how to run program in the run.py
 or refer to README 
 
 
-Note on additional .txt files
+Note on additional .txt files in regex directory
 
 name_stop_words.txt - Contains words to filter unneeded words
 						during the search of entity's name
@@ -28,6 +28,11 @@ regex.txt - some regular expressions to search phone numbers;
 			should be a workflow which would allow efficient
 			and accurate phone matching with good filter
 			pipeline from 'scraping trash'
+
+address.txt - some regular expressions to match addresses,
+				not perfect expesially given the diversity
+				of different address formats accross 
+				different countries
 """
 
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -42,8 +47,5 @@ regex.txt - some regular expressions to search phone numbers;
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-__version__ = '0.1.6'
+__version__ = '0.1.7'
 
-if __name__ == '__main__':
-    import doctest
-    doctest.testmod()

@@ -69,7 +69,8 @@ def process_phones(phone, country=None):
 
 	phone = phone.replace('-', ' ').replace('(', ' ').replace(')', ' ')
 	phone = phone.replace('.', ' ').replace(',', ' ').replace('    ', ' ')
-	phone = phone.strip().replace('\t', ' ').replace('  ', ' ').replace('  ', ' ')
+	phone = phone.strip().replace('\t', ' ').replace('  ', ' ')
+	phone = phone.replace('  ', ' ').replace(':', '')
 	if phone.startswith('+'):
 		return phone
 	if country.lower() == 'uk' or country.lower() == 'gb':

@@ -1,10 +1,10 @@
 Metadata-Version: 2.1
 Name: scrape-it-erelin6613
 Version: 0.1.6
-Summary: A small example package
-Home-page: https://github.com/erelin6613/scrape_it
+Summary: Systemitized tool for scraping
+Home-page: https://github.com/erelin6613/Scrape_it/releases/tag/v1.6
 Author: Valentyna Fihurska
-Author-email: author@example.com
+Author-email: valentineburn@gmail.com
 License: UNKNOWN
 Description: # Scrape_it
         
@@ -84,10 +84,10 @@ Description: # Scrape_it
         
         #### Q: The object returns the emplty dictionary. What do I do?
         ###### A: It could be the case the tools used did not find anything though it is certainly an exception rather than a rule. What you can try though: use 'webdriver' method to ensure JavaScript is rendered too, try specify the country, use proxy/VPN in case the website might block requests from your location
+        # Scrape_it
         
 Platform: UNKNOWN
 Classifier: Programming Language :: Python :: 3
-Classifier: License :: OSI Approved :: Apache License
 Classifier: Operating System :: OS Independent
 Requires-Python: >=3.5
 Description-Content-Type: text/markdown

@@ -411,6 +411,7 @@ def _get_text_list(url_to_scrape, method='requests', web_driver=None):
         return res, url_to_scrape
 
     except Exception as e:
+        print(e)
 
         return None, None
 

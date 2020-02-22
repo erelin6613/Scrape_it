@@ -1,0 +1,11 @@
+__pycache__
+.vscode
+*.pyc
+test.py
+test.csv
+test_results_requests.csv
+test_results_requests_semicolon.csv
+test_results_requests_tab.csv
+test_results_webdriver.csv
+test_results_webdriver_semicolon.csv
+test_results_webdriver_tab.csv

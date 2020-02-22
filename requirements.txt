@@ -8,3 +8,6 @@ pyap == 0.2.0
 regex == 2020.1.8
 requests == 2.22.0
 selenium == 3.141.0
+tqdm == 4.42.1
+tldextract = 2.2.2
+numpy == 1.18.1
