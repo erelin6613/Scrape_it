@@ -11,7 +11,7 @@ setuptools.setup(
     description="Systemitized tool for scraping",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/erelin6613/Scrape_it/releases/tag/v1.6",
+    url="https://github.com/erelin6613/Scrape_it/releases/tag/v0.1.7",
     license='Apache License 2.0',
     packages=setuptools.find_packages(),
     classifiers=[
