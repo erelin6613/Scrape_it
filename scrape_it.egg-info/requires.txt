@@ -1,0 +1,14 @@
+requests
+tqdm
+numpy
+nltk
+address-parser
+beautifulsoup4
+bs4
+lxml
+nltk
+phonenumbers
+pyap
+regex
+selenium
+tldextract

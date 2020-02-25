@@ -1,8 +1,8 @@
 Metadata-Version: 2.1
 Name: scrape-it
-Version: 0.1.7
+Version: 0.3.6
 Summary: Systemitized tool for scraping
-Home-page: https://github.com/erelin6613/Scrape_it/releases/tag/v0.1.7
+Home-page: https://github.com/erelin6613/Scrape_it
 Author: Valentyna Fihurska
 Author-email: valentineburn@gmail.com
 License: Apache License 2.0
@@ -13,7 +13,7 @@ Description: # Scrape_it
         # Installation
         Scrape_it is avalable on Pypi, you can install it using pip:
         ```sh
-        pip install install scrape-it
+        pip install scrape-it
         ```
         Install the lastest version:
         ```sh

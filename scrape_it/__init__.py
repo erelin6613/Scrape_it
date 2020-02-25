@@ -47,5 +47,13 @@ address.txt - some regular expressions to match addresses,
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-__version__ = '0.1.8'
+#import .scrape_it
+from .scrape_it import Scrape_it
+
+
+__version__ = '0.3.6'
+
+if __name__ == '__main__':
+    import doctest
+    doctest.testmod()
 

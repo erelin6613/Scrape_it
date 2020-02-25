@@ -1,7 +1,16 @@
+MANIFEST.in
 README.md
 setup.cfg
 setup.py
+scrape_it/__init__.py
+scrape_it/correct_base.py
+scrape_it/models.py
+scrape_it/regex.py
+scrape_it/run.py
+scrape_it/scrape_it.py
+scrape_it/scrape_policy_text.py
 scrape_it.egg-info/PKG-INFO
 scrape_it.egg-info/SOURCES.txt
 scrape_it.egg-info/dependency_links.txt
+scrape_it.egg-info/requires.txt
 scrape_it.egg-info/top_level.txt
