@@ -2,6 +2,7 @@ __pycache__
 .vscode
 *.pyc
 <<<<<<< HEAD
+test_env
 test.py
 test.csv
 test_results_requests.csv
