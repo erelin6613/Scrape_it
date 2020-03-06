@@ -9,7 +9,7 @@ setuptools.setup(
     name="scrape_it",
     DATA_DIR = os.path.join(sys.prefix, 
 		"local/lib/python3.6/dist-packages", "scrape_it"),
-    version="0.3.6",
+    version="0.3.7",
     py_modules=["scrape_it"],
     author="Valentyna Fihurska",
     author_email="valentineburn@gmail.com",
