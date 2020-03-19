@@ -91,6 +91,8 @@ external_links = {'twitter': 'twitter.com',
                     'youtube': 'youtube.com',
                     'linkedin': 'linkedin.com'}
 
+#cropped_emails = r'[info|support|contact|faq|help|hello]@[0-9A-Za-z]*\.[0-9A-Za-z]{2,3}'
+
 
 class Scrape_it:
 
@@ -421,8 +423,17 @@ class Scrape_it:
             if len(list(emails)) > 0:
                 return list(emails)[0]
             return None
+
+        def remove_junk_numns(email):
+
+            while email[0].isdigit():
+                email = email[1:]
+
+            return email
+
         mails = get_all_emails(self.soup)
         self.model['email'] = keep_with_keywords(mails, email_keywords)
+        self.model['email'] = remove_junk_numns(self.model['email'])
  
     def find_links(self):
 
@@ -436,7 +447,12 @@ class Scrape_it:
             links = {}
             for each in soup.find_all('a'):
                 for ext_key, ext_val in external_links.items():
-                    if ext_val in str(each.get('href')):
+                    if ext_val in str(each.get('href')) \
+                    and str(each.get('href')).endswith(str(ext_val)) is False \
+                    and str(each.get('href')).endswith(str(ext_val)+'/') is False:
+                        #print('Link', str(each.get('href')), 'does not end with', ext_val, 'and does not end with', ext_val+'/')
+                        #print(str(each.get('href')).endswith(str(ext_val)))
+                        #print(str(each.get('href')).endswith(str(ext_val)+'/'))
                         links[ext_key] = str(each.get('href'))
 
                 for int_key, int_val in internal_links.items():
@@ -497,7 +513,12 @@ class Scrape_it:
         links = build_links(find_raw_links(self.soup))
         
         for key, link in links.items():
+            if link.endswith(key+'.com') or link.endswith(key+'.com/') \
+            or link.endswith(self.model['url']) or link.endswith(self.model['url']+'/'):
+                self.model[key] = None
+                continue
             self.model[key] = link
+            #print(key, link)
 
     def validate_address(self):
 
