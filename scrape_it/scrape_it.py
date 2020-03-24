@@ -122,6 +122,7 @@ class Scrape_it:
         self.model['country'] = self.model['country']
         self.model['category'] = self.model['category']
         self.model['contact_link'] = None
+        self.model['description'] = None
         self.model['phones'] = None
         self.model['phone_1'] = None
         self.model['phone_2'] = None
@@ -274,6 +275,57 @@ class Scrape_it:
                 self.model['company_name'] = None
             if self.model['company_name']:
                 self.model['company_name'] = self.clean_name().strip()
+
+    def find_description(self):
+        """
+        Get company description from the most likely places in html it could be found
+        """
+        for script in self.soup(["script", "style"]):
+            script.extract()
+
+        metas_og = ['og:description']
+        metas = ['description']
+        for meta in metas_og:
+            if self.model['description'] is None \
+            or self.model['description'] == '':
+                try:
+                    meta_name = self.soup.find('meta', attrs={'property': meta})
+                    self.model['description'] = meta_name.get('content')
+                except AttributeError:
+                    pass
+
+        for meta in metas:
+
+            try:
+                meta_name = self.soup.find('meta', attrs={'name': meta})
+                self.model['description'] = meta_name.get('content')
+            except AttributeError:
+                if self.soup.find('title'):
+                    if len(self.soup.find('title')) > 0:
+                        title = self.soup.find('title')
+                        self.model['description'] = title.text
+        if self.model['description'] is not None:
+            if 'forbidden' in self.model['description'].lower() or\
+            'ngMeta' in self.model['description']:
+                self.model['description'] = None
+
+
+    def set_category(self):
+        """
+        Get company description from the most likely places in html it could be found
+        """
+        for script in self.soup(["script", "style"]):
+            script.extract()
+
+        for cat in categories:
+            score = 0
+            for text in self.soup.get_text.split('\n'):
+                if re.search(cat, text):
+                    score += 1
+            if score > 5:
+                self.model['category'] = cat
+                break
+
 
     def find_phones(self):
 
