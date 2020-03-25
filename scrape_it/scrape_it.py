@@ -309,7 +309,6 @@ class Scrape_it:
             'ngMeta' in self.model['description']:
                 self.model['description'] = None
 
-
     def set_category(self):
         """
         Get company description from the most likely places in html it could be found
@@ -317,15 +316,16 @@ class Scrape_it:
         for script in self.soup(["script", "style"]):
             script.extract()
 
-        for cat in categories:
+        for cat, reg in categories.items():
             score = 0
-            for text in self.soup.get_text.split('\n'):
-                if re.search(cat, text):
+            for text in self.soup.get_text().split('\n'):
+                #print(text.lower())
+                if re.search(reg, text.lower()):
+                    print(reg, text)
                     score += 1
-            if score > 5:
+            if score > 2:
                 self.model['category'] = cat
                 break
-
 
     def find_phones(self):
 
@@ -485,7 +485,8 @@ class Scrape_it:
 
         mails = get_all_emails(self.soup)
         self.model['email'] = keep_with_keywords(mails, email_keywords)
-        self.model['email'] = remove_junk_numns(self.model['email'])
+        if self.model['email']:
+            self.model['email'] = remove_junk_numns(self.model['email'])
  
     def find_links(self):
 
@@ -669,7 +670,6 @@ class Scrape_it:
 
         self.model['phones'] = string[:-2]
 
-
     def scrape_text(self, method):
         """
         Scrape text of the page of interest;
@@ -731,8 +731,11 @@ class Scrape_it:
         self.init_model()
         self.logging()
         self.define_domain()
+        if not self.model['category']:
+            self.set_category()
         if self.model['company_name'] is None:
             self.get_name()
+        self.find_description()
         self.find_address()
         self.find_phones()
         self.find_email()
