@@ -8,6 +8,7 @@ scrape_it/models.py
 scrape_it/regex.py
 scrape_it/run.py
 scrape_it/scrape_it.py
+scrape_it/scrape_it_experimental.py
 scrape_it/scrape_policy_text.py
 scrape_it.egg-info/PKG-INFO
 scrape_it.egg-info/SOURCES.txt

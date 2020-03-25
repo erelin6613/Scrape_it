@@ -51,7 +51,7 @@ address.txt - some regular expressions to match addresses,
 from .scrape_it import Scrape_it
 
 
-__version__ = '0.3.7'
+__version__ = '0.3.8'
 
 if __name__ == '__main__':
     import doctest

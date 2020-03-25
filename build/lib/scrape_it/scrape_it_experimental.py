@@ -91,8 +91,6 @@ external_links = {'twitter': 'twitter.com',
                     'youtube': 'youtube.com',
                     'linkedin': 'linkedin.com'}
 
-#cropped_emails = r'[info|support|contact|faq|help|hello]@[0-9A-Za-z]*\.[0-9A-Za-z]{2,3}'
-
 
 class Scrape_it:
 
@@ -102,12 +100,90 @@ class Scrape_it:
 
         self.url = url
         self.method = method
-        self.model = {'url': self.url, 'country': country, 
-                        'category': category, 'company_name': company_name}
+        #self.model = {'url': self.url, 'country': country, 
+        #                'category': category, 'company_name': company_name}
         self.soup = None
         self.geo_key = geo_key
         self.verbose = verbose
         self.driver = driver
+        self.get_soup()
+
+
+    def logging(self):
+        """
+        Log some text while scraping if verbose is set to 1
+        """
+
+        if self.verbose == 1:
+            print('Scraping', self.url, '...')
+
+    def define_domain(self):
+        """
+        Define domain name of the link
+        """
+
+        def get_domain(url):
+            domain = tldextract.extract(str(url)).domain+'.'+tldextract.extract(str(url)).suffix
+            return ['https://'+domain, 'http://'+domain, 'https://www.'+domain]
+
+        return get_domain(self.url)
+
+        #self.model['url'] = get_domain(self.url)
+
+    def get_soup(self):
+        """
+        Gets soup object depending on the method
+        """
+        url = self.define_domain(self.url)
+        if self.method == 'requests':
+            import requests
+            try:
+                for link in url:
+                    r = requests.get(link)
+                    if r.status_code == 200:
+                        soup = BeautifulSoup(r.text, 'lxml')
+                        break
+
+            except Exception as e:
+                print(e, link)
+            
+        if self.method == 'webdriver':
+            from selenium import webdriver
+            options = webdriver.ChromeOptions() 
+            options.add_argument('headless')
+            self.driver = webdriver.Chrome(executable_path='./chromedriver', 
+                                            options=options)
+
+            for link in url:
+                try:
+                    self.driver.get(link)
+                    soup = BeautifulSoup(self.driver.page_source, 'lxml')
+                    break
+                except Exception as e:
+                    print(e, link)
+                
+        try:
+            assert soup is not None
+            return soup
+        except Exception:
+            return
+
+    #def scrape(self):
+
+        #self.soup = self.get_soup(self.url)
+
+
+
+
+
+class CustomScrape(Scrape_it):
+
+    def __init__(self):
+        super.__init__()
+
+        self.model = {'url': self.url, 'country': country, 
+                        'category': category, 'company_name': company_name}
+
 
     def init_model(self):
         """
@@ -122,7 +198,6 @@ class Scrape_it:
         self.model['country'] = self.model['country']
         self.model['category'] = self.model['category']
         self.model['contact_link'] = None
-        self.model['description'] = None
         self.model['phones'] = None
         self.model['phone_1'] = None
         self.model['phone_2'] = None
@@ -130,20 +205,6 @@ class Scrape_it:
         self.model['phone_4'] = None
         self.model['phone_5'] = None
         self.model['phone_6'] = None
-        self.model['phone_7'] = None
-        self.model['phone_8'] = None
-        self.model['phone_9'] = None
-        self.model['phone_10'] = None
-        self.model['phone_11'] = None
-        self.model['phone_12'] = None
-        self.model['phone_13'] = None
-        self.model['phone_14'] = None
-        self.model['phone_15'] = None
-        self.model['phone_16'] = None
-        self.model['phone_17'] = None
-        self.model['phone_18'] = None
-        self.model['phone_19'] = None
-        self.model['phone_20'] = None
         self.model['address'] = None
         self.model['state'] = None
         self.model['county'] = None
@@ -171,54 +232,6 @@ class Scrape_it:
         self.model['shipping_text'] = None
         self.model['terms_text'] = None
         self.model['warranty_text'] = None
-
-    def logging(self):
-        """
-        Log some text while scraping if verbose is set to 1
-        """
-
-        if self.verbose == 1:
-            print('Scraping', self.url, '...')
-
-    def define_domain(self):
-        """
-        Define domain name of the link
-        """
-
-        def get_domain(url):
-            domain = tldextract.extract(str(url)).domain+'.'+tldextract.extract(str(url)).suffix
-            return domain
-
-        self.model['url'] = get_domain(self.url)
-
-    def get_soup(self, url):
-        """
-        Gets soup object depending on the method
-        """
-        if self.method == 'requests':
-            import requests
-            try:
-                r = requests.get(url)
-                soup = BeautifulSoup(r.text, 'lxml')
-            except Exception as e:
-                print(e, url)
-            
-        if self.method == 'webdriver':
-            from selenium import webdriver
-            options = webdriver.ChromeOptions() 
-            options.add_argument('headless')
-            self.driver = webdriver.Chrome(executable_path='./chromedriver', 
-                                            options=options)
-            try:
-                self.driver.get(url)
-            except Exception as e:
-                print(e, url)
-            soup = BeautifulSoup(self.driver.page_source, 'lxml')
-        try:
-            assert soup is not None
-            return soup
-        except Exception:
-            return
 
     def clean_name(self):
         """
@@ -276,57 +289,6 @@ class Scrape_it:
             if self.model['company_name']:
                 self.model['company_name'] = self.clean_name().strip()
 
-    def find_description(self):
-        """
-        Get company description from the most likely places in html it could be found
-        """
-        for script in self.soup(["script", "style"]):
-            script.extract()
-
-        metas_og = ['og:description']
-        metas = ['description']
-        for meta in metas_og:
-            if self.model['description'] is None \
-            or self.model['description'] == '':
-                try:
-                    meta_name = self.soup.find('meta', attrs={'property': meta})
-                    self.model['description'] = meta_name.get('content')
-                except AttributeError:
-                    pass
-
-        for meta in metas:
-
-            try:
-                meta_name = self.soup.find('meta', attrs={'name': meta})
-                self.model['description'] = meta_name.get('content')
-            except AttributeError:
-                if self.soup.find('title'):
-                    if len(self.soup.find('title')) > 0:
-                        title = self.soup.find('title')
-                        self.model['description'] = title.text
-        if self.model['description'] is not None:
-            if 'forbidden' in self.model['description'].lower() or\
-            'ngMeta' in self.model['description']:
-                self.model['description'] = None
-
-    def set_category(self):
-        """
-        Get company description from the most likely places in html it could be found
-        """
-        for script in self.soup(["script", "style"]):
-            script.extract()
-
-        for cat, reg in categories.items():
-            score = 0
-            for text in self.soup.get_text().split('\n'):
-                #print(text.lower())
-                if re.search(reg, text.lower()):
-                    print(reg, text)
-                    score += 1
-            if score > 2:
-                self.model['category'] = cat
-                break
-
     def find_phones(self):
 
         def get_from_href(soup):
@@ -365,27 +327,11 @@ class Scrape_it:
 
             return phones
 
-        def remove_dublicates(phones):
-
-            def __get_digits__(phone):
-                phone = '+'+re.sub(r"[^0-9]", "", phone).strip()
-                return phone.replace(' ', '').replace('-', '').replace('(', '').replace(')', '')
-
-            temp_set = set()
-
-            for phone in phones:
-                temp_set.add(__get_digits__(phone))
-
-            return list(temp_set)
-
         self.model['phones'] = get_from_href(self.soup)
         if self.model['phones']:
             self.model['phones'] = self.model['phones'].union(match_phones(self.soup))
         else:
             self.model['phones'] = match_phones(self.soup)
-        if len(self.model['phones']) > 20:
-            self.model['phones'] = list(self.model['phones'])[:19]
-        self.model['phones'] = remove_dublicates(self.model['phones'])
 
     def find_address(self):
 
@@ -475,18 +421,8 @@ class Scrape_it:
             if len(list(emails)) > 0:
                 return list(emails)[0]
             return None
-
-        def remove_junk_numns(email):
-
-            while email[0].isdigit():
-                email = email[1:]
-
-            return email
-
         mails = get_all_emails(self.soup)
         self.model['email'] = keep_with_keywords(mails, email_keywords)
-        if self.model['email']:
-            self.model['email'] = remove_junk_numns(self.model['email'])
  
     def find_links(self):
 
@@ -500,12 +436,7 @@ class Scrape_it:
             links = {}
             for each in soup.find_all('a'):
                 for ext_key, ext_val in external_links.items():
-                    if ext_val in str(each.get('href')) \
-                    and str(each.get('href')).endswith(str(ext_val)) is False \
-                    and str(each.get('href')).endswith(str(ext_val)+'/') is False:
-                        #print('Link', str(each.get('href')), 'does not end with', ext_val, 'and does not end with', ext_val+'/')
-                        #print(str(each.get('href')).endswith(str(ext_val)))
-                        #print(str(each.get('href')).endswith(str(ext_val)+'/'))
+                    if ext_val in str(each.get('href')):
                         links[ext_key] = str(each.get('href'))
 
                 for int_key, int_val in internal_links.items():
@@ -554,7 +485,7 @@ class Scrape_it:
             Clean links which require login or sign up and containing
             some search/meta data parameters
             """
-            stop_attrs = ['#', '?', 'login', 'signup', 'sign-up', 'sign_up', 'sharer']
+            stop_attrs = ['#', '?', 'login', 'signup', 'sign-up', 'sign_up']
 
             for key, link in links.items():
                 for attr in stop_attrs:
@@ -566,12 +497,7 @@ class Scrape_it:
         links = build_links(find_raw_links(self.soup))
         
         for key, link in links.items():
-            if link.endswith(key+'.com') or link.endswith(key+'.com/') \
-            or link.endswith(self.model['url']) or link.endswith(self.model['url']+'/'):
-                self.model[key] = None
-                continue
             self.model[key] = link
-            #print(key, link)
 
     def validate_address(self):
 
@@ -641,8 +567,6 @@ class Scrape_it:
         requests library does not handle well links in www.site.com format,
         hence needs to be fixed to be the format 'https://www.site.com'
         """
-        if link.startswith('http') == False and link.startswith('www') == False:
-            return 'https://www.'+link
         if link.startswith('www.'):
             return 'https://'+link
         return link
@@ -660,15 +584,6 @@ class Scrape_it:
                     self.model[f'phone_{i+1}'] = self.model['phones'][i]
                 except IndexError:
                     pass
-
-    def phones_to_string(self):
-
-        string = ''
-
-        for phone in self.model['phones']:
-            string = string+str(phone)+'; '
-
-        self.model['phones'] = string[:-2]
 
     def scrape_text(self, method):
         """
@@ -689,12 +604,12 @@ class Scrape_it:
                         if self.model['company_name'] is not None:
                             text = ' '.join(text_generator(text_mas=self.model[text_key][0], 
                                                 company_name=self.model['company_name'],
-                                                company_website='Website'))
+                                                company_website=self.model['url']))
                             self.model[text_key] = text
                         else:
                             text = ' '.join(text_generator(text_mas=self.model[text_key][0], 
                                                 company_name='Company',
-                                                company_website='Website'))
+                                                company_website=self.model['url']))
                             self.model[text_key] = text
                 except TypeError:
                     self.model[key] = None
@@ -731,11 +646,8 @@ class Scrape_it:
         self.init_model()
         self.logging()
         self.define_domain()
-        if not self.model['category']:
-            self.set_category()
         if self.model['company_name'] is None:
             self.get_name()
-        self.find_description()
         self.find_address()
         self.find_phones()
         self.find_email()
@@ -775,7 +687,6 @@ class Scrape_it:
         if self.model['phones']:
             self.split_phones_to_cols = True
             self.split_phones()
-            self.phones_to_string()
 
         if self.verbose == 1:
             for key, val in self.model.items():
